@@ -16,6 +16,8 @@ app.use(express.json());
 
 // Configure CORS to allow multiple frontend ports
 const allowedOrigins = [
+  'https://oabs-audease.web.app',        // Add this line
+  'https://oabs-audease.firebaseapp.com', // Add this line
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000',

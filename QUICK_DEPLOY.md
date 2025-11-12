@@ -87,23 +87,43 @@ git status
 # - frontend/.env
 ```
 
-### 2.2 Commit and Push to GitHub
+### 2.2 Create GitHub Repository (IMPORTANT!)
+
+**STOP! Do this BEFORE the next command:**
+
+1. Go to https://github.com/new
+2. **Repository name:** `audease`
+3. **Visibility:** Public (or Private)
+4. **DO NOT check:**
+   - ❌ Add a README file
+   - ❌ Add .gitignore
+   - ❌ Choose a license
+5. Click **"Create repository"**
+
+### 2.3 Commit and Push to GitHub
 ```bash
 git commit -m "Initial commit - AUDEASE backend"
 
-# Create repository on GitHub:
-# Go to https://github.com/new
-# Name: audease
-# Public or Private
-# DON'T initialize with README
-
-# Add remote and push
-git remote add origin https://github.com/YOUR_USERNAME/audease.git
+# Add remote (use YOUR GitHub username)
+git remote add origin https://github.com/SudarshanChaudhuri/audease.git
 git branch -M main
 git push -u origin main
 ```
 
-### 2.3 Deploy Backend on Render
+**Expected Output:**
+```
+Enumerating objects: 50, done.
+Counting objects: 100% (50/50), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (45/45), done.
+Writing objects: 100% (50/50), 15.23 KiB | 1.52 MiB/s, done.
+Total 50 (delta 10), reused 0 (delta 0), pack-reused 0
+To https://github.com/SudarshanChaudhuri/audease.git
+ * [new branch]      main -> main
+Branch 'main' set up to track remote branch 'main' from 'origin'.
+```
+
+### 2.4 Deploy Backend on Render
 1. Go to https://dashboard.render.com/ (Sign up if needed)
 2. Click **"New +"** → **Web Service**
 3. Connect your GitHub account
@@ -118,7 +138,7 @@ git push -u origin main
 - **Start Command:** `npm start`
 - **Instance Type:** `Free`
 
-### 2.4 Add Environment Variables
+### 2.5 Add Environment Variables
 In Render dashboard:
 - Click **"Environment"** tab
 - Add variables:
@@ -127,7 +147,7 @@ In Render dashboard:
   NODE_ENV=production
   ```
 
-### 2.5 Upload Service Account Key
+### 2.6 Upload Service Account Key
 **Critical Step:**
 - Click **"Environment"** tab
 - Scroll to **"Secret Files"**
@@ -136,12 +156,12 @@ In Render dashboard:
 - **Contents:** Open your local `serviceAccountKey.json` and paste entire contents
 - Click **"Save"**
 
-### 2.6 Deploy!
+### 2.7 Deploy!
 - Click **"Create Web Service"**
 - Wait 3-5 minutes for build and deployment
 - Watch the logs for: `✅ AUDEASE backend listening on port 5000`
 
-### 2.7 Note Your Backend URL
+### 2.8 Note Your Backend URL
 Once deployed, Render will give you a URL like:
 ```
 https://audease-backend.onrender.com
@@ -441,6 +461,18 @@ Here's what you just deployed in the **optimal order**:
 ## 🐛 **Troubleshooting**
 
 ### **Backend Issues:**
+
+#### "git push failed - Repository not found"
+**Error:** `fatal: repository 'https://github.com/.../audease.git/' not found`
+
+**Fix:**
+1. Create the repository on GitHub first: https://github.com/new
+2. Name it exactly `audease`
+3. **Don't** initialize with README/gitignore/license
+4. Then run the push command again:
+   ```bash
+   git push -u origin main
+   ```
 
 #### "Backend health check fails"
 **Check:**
