@@ -1,0 +1,190 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user is the owner of the document
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+    
+    // Check if user is an admin
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Check if user is faculty
+    function isFaculty() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'faculty';
+    }
+    
+    // Check if user is student
+    function isStudent() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
+    }
+    
+    // Validate user data structure
+    function isValidUserData() {
+      return request.resource.data.keys().hasAll(['email', 'role', 'createdAt']) &&
+             request.resource.data.role in ['student', 'faculty', 'admin'];
+    }
+    
+    // Validate booking data structure
+    function isValidBookingData() {
+      return request.resource.data.keys().hasAll([
+        'userId', 'auditoriumName', 'date', 'startTime', 
+        'endTime', 'status', 'createdAt'
+      ]) &&
+      request.resource.data.status in ['pending', 'approved', 'rejected', 'cancelled'];
+    }
+    
+    // Check if booking can be modified
+    function canModifyBooking() {
+      return isAdmin() || 
+             isFaculty() || 
+             (isAuthenticated() && resource.data.userId == request.auth.uid);
+    }
+    
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    
+    match /users/{uid} {
+      // Anyone authenticated can read user profiles
+      allow read: if isAuthenticated();
+      
+      // Users can create their own profile during registration
+      allow create: if isAuthenticated() && 
+                       isOwner(uid) && 
+                       isValidUserData();
+      
+      // Users can update their own profile, admins can update any
+      allow update: if isAuthenticated() && 
+                       (isOwner(uid) || isAdmin());
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // BOOKINGS COLLECTION
+    // ============================================
+    
+    match /bookings/{bookingId} {
+      // All authenticated users can read bookings
+      // (Needed for availability checking and admin view)
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create bookings
+      allow create: if isAuthenticated() && 
+                       isValidBookingData() &&
+                       request.resource.data.userId == request.auth.uid;
+      
+      // Users can update their own bookings (cancel)
+      // Faculty and Admin can update any booking (approve/reject)
+      allow update: if isAuthenticated() && canModifyBooking();
+      
+      // Only admins can permanently delete bookings
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // NOTIFICATIONS COLLECTION
+    // ============================================
+    
+    match /notifications/{notificationId} {
+      // Users can only read their own notifications
+      // Admins can read all notifications
+      allow read: if isAuthenticated() && 
+                     (resource.data.uid == request.auth.uid || isAdmin());
+      
+      // System can create notifications (via backend)
+      // Users cannot directly create notifications
+      allow create: if isAuthenticated();
+      
+      // Users can update their own notifications (mark as read)
+      // Admins can update any
+      allow update: if isAuthenticated() && 
+                      (resource.data.uid == request.auth.uid || isAdmin());
+      
+      // Users can delete their own notifications
+      // Admins can delete any
+      allow delete: if isAuthenticated() && 
+                      (resource.data.uid == request.auth.uid || isAdmin());
+    }
+    
+    // ============================================
+    // SUPPORT REQUESTS COLLECTION
+    // ============================================
+    
+    match /support/{requestId} {
+      // Only admins can read support requests
+      allow read: if isAdmin();
+      
+      // Authenticated users can create support requests
+      allow create: if isAuthenticated();
+      
+      // Only admins can update support requests (change status)
+      allow update: if isAdmin();
+      
+      // Only admins can delete support requests
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // AUDITORIUMS COLLECTION (Optional - for dynamic management)
+    // ============================================
+    
+    match /auditoriums/{auditoriumId} {
+      // Anyone authenticated can read auditorium info
+      allow read: if isAuthenticated();
+      
+      // Only admins can create auditoriums
+      allow create: if isAdmin();
+      
+      // Only admins can update auditoriums
+      allow update: if isAdmin();
+      
+      // Only admins can delete auditoriums
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // ANALYTICS COLLECTION (Optional - for storing analytics data)
+    // ============================================
+    
+    match /analytics/{docId} {
+      // Only admins and faculty can read analytics
+      allow read: if isAdmin() || isFaculty();
+      
+      // System can create analytics entries
+      allow create: if isAuthenticated();
+      
+      // Only admins can update analytics
+      allow update: if isAdmin();
+      
+      // Only admins can delete analytics
+      allow delete: if isAdmin();
+    }
+    
+    // ============================================
+    // DENY ALL OTHER ACCESS
+    // ============================================
+    
+    // Default: deny all other database access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
