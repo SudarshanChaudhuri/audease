@@ -51,10 +51,11 @@ export default function BookingForm({ onClose, onSuccess }) {
     defaultValues: formData
   });
 
+  // Returns an object { available: boolean, conflicts: Array }
   const checkAvailability = async (date, startTime, endTime, auditoriumId) => {
     try {
       const dateStr = format(date, 'yyyy-MM-dd');
-      
+
       const response = await api.get('/bookings/checkAvailability', {
         params: {
           auditoriumId,
@@ -63,16 +64,22 @@ export default function BookingForm({ onClose, onSuccess }) {
           endTime
         }
       });
-      
-      return response.data.available;
+
+      return {
+        available: response.data.available,
+        conflicts: response.data.conflicts || []
+      };
     } catch (error) {
       console.error('Error checking availability:', error);
       if (error.response?.data?.conflicts) {
         const conflicts = error.response.data.conflicts;
         const conflictTimes = conflicts.map(c => `${c.startTime}-${c.endTime}`).join(', ');
+        // Show a user-friendly hint about conflicting slots
         toast.warning(`Time slot conflicts with existing bookings: ${conflictTimes}`);
+        return { available: false, conflicts };
       }
-      return false; // Don't allow booking if check fails
+      // If the check itself failed for another reason (network, server), return unavailable with empty conflicts
+      return { available: false, conflicts: [] };
     }
   };
 
@@ -106,17 +113,24 @@ export default function BookingForm({ onClose, onSuccess }) {
     setLoading(true);
     
     try {
-      // Check availability first
-      const isAvailable = await checkAvailability(
+      // Check availability first. The helper now returns { available, conflicts }
+      const availability = await checkAvailability(
         formData.date,
         formData.startTime,
         formData.endTime,
         formData.auditorium
       );
 
-      if (!isAvailable) {
-        toast.error('This time slot is already booked. Please choose another time.');
-        setStep(2);
+      if (!availability.available) {
+        // If conflicts were returned, send user to auditorium selection so they can try another room,
+        // otherwise send them back to date/time selection to pick a different slot.
+        if (availability.conflicts && availability.conflicts.length > 0) {
+          toast.error('Selected auditorium is unavailable for the chosen time. Please pick a different auditorium or time.');
+          setStep(3);
+        } else {
+          toast.error('This time slot is already booked or could not be verified. Please choose another time.');
+          setStep(2);
+        }
         setLoading(false);
         return;
       }

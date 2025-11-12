@@ -344,9 +344,9 @@ export default function SmartAssistant() {
       }, 1000);
     } catch (error) {
       console.error('Availability check error:', error);
-      addBotMessage("⚠️ Couldn't check availability. Please try again or contact support.", null);
+      addBotMessage("⚠️ Couldn't check availability. Let me proceed with your booking anyway.", null);
       setTimeout(() => {
-        showSummary(); // Proceed anyway for demo purposes
+        showSummary();
       }, 1000);
     }
   };
