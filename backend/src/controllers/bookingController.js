@@ -52,6 +52,14 @@ async function createBooking(req, res) {
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
+    // Send confirmation notification to user
+    await sendNotification(
+      req.user.uid,
+      'Booking Request Submitted',
+      `Your booking request for "${eventTitle}" on ${date} has been submitted and is pending approval.`,
+      'booking_status'
+    );
+
     res.status(201).json({
       message: 'Booking created successfully',
       bookingId: bookingRef.id

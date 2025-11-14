@@ -10,7 +10,7 @@ async function sendNotification(uid, title, message, type = 'info') {
       title,
       message,
       type,
-      isRead: false,
+      read: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
   } catch (error) {
@@ -80,7 +80,7 @@ async function markAsRead(req, res) {
     }
 
     await db.collection('notifications').doc(id).update({
-      isRead: true,
+      read: true,
       readAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
@@ -104,13 +104,13 @@ async function markAllAsRead(req, res) {
 
     const snapshot = await db.collection('notifications')
       .where('uid', '==', uid)
-      .where('isRead', '==', false)
+      .where('read', '==', false)
       .get();
 
     const batch = db.batch();
     snapshot.forEach(doc => {
       batch.update(doc.ref, {
-        isRead: true,
+        read: true,
         readAt: admin.firestore.FieldValue.serverTimestamp()
       });
     });

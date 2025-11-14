@@ -106,15 +106,14 @@ export default function StudentDashboard() {
           </>
         )
 
-      case 'requests':
+      case 'notifications':
         return (
           <>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-extrabold">Notifications & Requests</h2>
+              <h2 className="text-3xl font-extrabold">Notifications</h2>
             </div>
             <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
               <div className="p-6 rounded-2xl bg-black/60 border border-green-900 shadow-xl">
-                <h3 className="text-2xl font-bold text-green-100 mb-4">Recent Notifications</h3>
                 <Notifications />
               </div>
             </motion.section>

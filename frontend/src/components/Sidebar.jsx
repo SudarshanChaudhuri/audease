@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { auth } from '../config/firebase'
+import { auth, db } from '../config/firebase'
 import { signOut } from 'firebase/auth'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import { toast } from 'react-toastify'
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion'
@@ -9,8 +10,7 @@ import { motion } from 'framer-motion'
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
   { id: 'bookings', label: 'Bookings', icon: '📅' },
-  { id: 'requests', label: 'Requests', icon: '✉️' },
-  { id: 'users', label: 'Users', icon: '👥' },
+  { id: 'notifications', label: 'Notifications', icon: '🔔', showBadge: true },
   { id: 'analytics', label: 'Analytics', icon: '📈' },
   { id: 'settings', label: 'Settings', icon: '⚙️' },
 ]
@@ -18,11 +18,26 @@ const navItems = [
 export default function Sidebar({ className = '', compact = false, onNavigate }) {
   const navigate = useNavigate()
   const [userEmail, setUserEmail] = useState('')
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setUserEmail(user.email || 'No email')
+        
+        // Listen for unread notifications
+        const notificationsRef = collection(db, 'notifications')
+        const q = query(
+          notificationsRef,
+          where('uid', '==', user.uid),
+          where('read', '==', false)
+        )
+        
+        const unsubscribeNotifications = onSnapshot(q, (snapshot) => {
+          setUnreadCount(snapshot.size)
+        })
+        
+        return () => unsubscribeNotifications()
       }
     })
     return () => unsubscribe()
@@ -59,10 +74,15 @@ export default function Sidebar({ className = '', compact = false, onNavigate })
           <button
             key={n.id}
             onClick={() => (onNavigate ? onNavigate(n.id) : navigate('/' + n.id))}
-            className="flex items-center gap-3 text-left px-3 py-2 rounded-lg hover:bg-black/40 hover:translate-x-1 transform transition text-green-200"
+            className="flex items-center gap-3 text-left px-3 py-2 rounded-lg hover:bg-black/40 hover:translate-x-1 transform transition text-green-200 relative"
           >
             <span className="text-xl">{n.icon}</span>
             <span className="font-medium">{n.label}</span>
+            {n.showBadge && unreadCount > 0 && (
+              <span className="absolute left-6 top-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </button>
         ))}
       </nav>

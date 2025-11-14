@@ -29,12 +29,12 @@ const EVENT_TYPES = [
   { id: 'others', label: 'Others', icon: '✨' }
 ];
 
-// Auditorium database
+// Auditorium database (must match backend auditorium IDs)
 const AUDITORIUMS = [
-  { id: 'mini-hall', name: 'Mini Hall', capacity: 100, description: 'Cozy space for intimate gatherings' },
-  { id: 'main-auditorium', name: 'Main Auditorium', capacity: 300, description: 'Our flagship venue' },
-  { id: 'convention-hall', name: 'Convention Hall', capacity: 500, description: 'Large-scale events' },
-  { id: 'seminar-room-1', name: 'Seminar Room 1', capacity: 50, description: 'Perfect for small groups' }
+  { id: 'aud4', name: 'Conference Room', capacity: 50, description: 'Perfect for small groups' },
+  { id: 'aud3', name: 'Seminar Hall B', capacity: 100, description: 'Cozy space for intimate gatherings' },
+  { id: 'aud2', name: 'Seminar Hall A', capacity: 150, description: 'Great for medium-sized events' },
+  { id: 'aud1', name: 'Main Auditorium', capacity: 500, description: 'Our flagship venue for large-scale events' }
 ];
 
 export default function SmartAssistant() {
@@ -280,10 +280,10 @@ export default function SmartAssistant() {
 
   // Suggest auditorium based on audience size
   const suggestAuditorium = (size) => {
-    if (size <= 50) return AUDITORIUMS.find(a => a.id === 'seminar-room-1');
-    if (size <= 100) return AUDITORIUMS.find(a => a.id === 'mini-hall');
-    if (size <= 300) return AUDITORIUMS.find(a => a.id === 'main-auditorium');
-    return AUDITORIUMS.find(a => a.id === 'convention-hall');
+    if (size <= 50) return AUDITORIUMS.find(a => a.id === 'aud4');  // Conference Room
+    if (size <= 100) return AUDITORIUMS.find(a => a.id === 'aud3'); // Seminar Hall B
+    if (size <= 150) return AUDITORIUMS.find(a => a.id === 'aud2'); // Seminar Hall A
+    return AUDITORIUMS.find(a => a.id === 'aud1');                  // Main Auditorium
   };
 
   // Validate date (must be future)
