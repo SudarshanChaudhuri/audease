@@ -134,10 +134,13 @@ export default function SmartAssistant() {
       case STEPS.CONFIRM_AUDITORIUM:
         addUserMessage(option.label);
         if (option.id === 'yes') {
-          setBookingData(prev => ({ 
-            ...prev, 
-            auditoriumId: prev.suggestedAuditorium.id 
-          }));
+          setBookingData(prev => {
+            console.log('[SmartAssistant] Setting auditoriumId from suggested:', prev.suggestedAuditorium?.id);
+            return { 
+              ...prev, 
+              auditoriumId: prev.suggestedAuditorium.id 
+            };
+          });
           setTimeout(() => {
             setCurrentStep(STEPS.DATE);
             addBotMessage("On which date would you like to host your event? (YYYY-MM-DD)", STEPS.DATE);
@@ -160,7 +163,10 @@ export default function SmartAssistant() {
         if (option.data) {
           // Selecting a specific auditorium
           addUserMessage(option.label);
-          setBookingData(prev => ({ ...prev, auditoriumId: option.id }));
+          setBookingData(prev => {
+            console.log('[SmartAssistant] Setting auditoriumId from manual selection:', option.id);
+            return { ...prev, auditoriumId: option.id };
+          });
           setTimeout(() => {
             setCurrentStep(STEPS.DATE);
             addBotMessage("On which date would you like to host your event? (YYYY-MM-DD)", STEPS.DATE);
@@ -258,13 +264,23 @@ export default function SmartAssistant() {
             setAwaitingInput(true);
             return;
           }
-          setBookingData(prev => ({ ...prev, endTime: input }));
           
-          // Check availability
-          setTimeout(() => {
-            setCurrentStep(STEPS.CHECK_AVAILABILITY);
-            checkAvailability();
-          }, 500);
+          const endTimeValue = input;
+          console.log('[SmartAssistant] Setting endTime:', endTimeValue);
+          console.log('[SmartAssistant] Current bookingData before setState:', bookingData);
+          
+          setBookingData(prev => {
+            const updated = { ...prev, endTime: endTimeValue };
+            console.log('[SmartAssistant] Updated bookingData:', updated);
+            
+            // Check availability after state update
+            setTimeout(() => {
+              setCurrentStep(STEPS.CHECK_AVAILABILITY);
+              checkAvailability(updated);  // Pass updated data directly
+            }, 500);
+            
+            return updated;
+          });
         }
         break;
 
@@ -314,15 +330,19 @@ export default function SmartAssistant() {
   };
 
   // Check availability with backend
-  const checkAvailability = async () => {
+  const checkAvailability = async (dataToCheck = null) => {
     addBotMessage("🔍 Checking availability...", STEPS.CHECK_AVAILABILITY);
     
+    // Use provided data or fallback to bookingData state
+    const checkData = dataToCheck || bookingData;
+    console.log('[SmartAssistant] checkAvailability called with data:', JSON.stringify(checkData, null, 2));
+    
     try {
-      const { auditoriumId, date, startTime, endTime } = bookingData;
+      const { auditoriumId, date, startTime, endTime } = checkData;
       
       // Validate required parameters before making API call
       if (!auditoriumId || !date || !startTime || !endTime) {
-        console.error('Missing required booking data:', { auditoriumId, date, startTime, endTime });
+        console.error('[SmartAssistant] Missing required booking data:', { auditoriumId, date, startTime, endTime });
         toast.error('Missing booking information. Please start over.');
         addBotMessage(
           "⚠️ Some booking information is missing. Let's start over.",
