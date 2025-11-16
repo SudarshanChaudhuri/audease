@@ -191,11 +191,35 @@ async function checkSlotAvailability(req, res) {
   try {
     const { auditoriumId, date, startTime, endTime } = req.query;
 
+    // Debug logging
+    console.log('[checkSlotAvailability] Request received:', {
+      auditoriumId,
+      date,
+      startTime,
+      endTime
+    });
+
+    // Validate required parameters with detailed error message
     if (!auditoriumId || !date || !startTime || !endTime) {
-      return res.status(400).json({ message: 'Missing required parameters' });
+      const missing = [];
+      if (!auditoriumId) missing.push('auditoriumId');
+      if (!date) missing.push('date');
+      if (!startTime) missing.push('startTime');
+      if (!endTime) missing.push('endTime');
+      
+      console.error('[checkSlotAvailability] Missing parameters:', missing);
+      return res.status(400).json({ 
+        message: `Missing required parameters: ${missing.join(', ')}`,
+        missingParams: missing
+      });
     }
 
     const availability = await checkAvailability(auditoriumId, date, startTime, endTime);
+
+    console.log('[checkSlotAvailability] Availability result:', {
+      available: availability.available,
+      conflictCount: availability.conflicts?.length || 0
+    });
 
     if (availability.available) {
       res.json({
@@ -208,15 +232,22 @@ async function checkSlotAvailability(req, res) {
                       require('../helpers/availabilityHelper').parseTime(startTime);
       const alternatives = await findAlternativeSlots(auditoriumId, date, duration);
 
+      console.log('[checkSlotAvailability] Conflicts found:', availability.conflicts);
+
       res.json({
         available: false,
+        message: 'Time slot is not available',
         conflicts: availability.conflicts,
         alternatives
       });
     }
   } catch (error) {
-    console.error('Check availability error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('[checkSlotAvailability] Error:', error);
+    console.error('[checkSlotAvailability] Error stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Server error while checking availability',
+      error: error.message
+    });
   }
 }
 

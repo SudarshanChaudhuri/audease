@@ -315,50 +315,25 @@ export default function SmartAssistant() {
 
   // Check availability with backend
   const checkAvailability = async () => {
-    addBotMessage("🔍 Checking availability...", STEPS.CHECK_AVAILABILITY);
+    addBotMessage("��� Checking availability...", STEPS.CHECK_AVAILABILITY);
     
     try {
       const { auditoriumId, date, startTime, endTime } = bookingData;
-      
-      // Validate required parameters before making API call
-      if (!auditoriumId || !date || !startTime || !endTime) {
-        console.error('Missing required booking data:', { auditoriumId, date, startTime, endTime });
-        toast.error('Missing booking information. Please start over.');
-        addBotMessage(
-          "⚠️ Some booking information is missing. Let's start over.",
-          STEPS.GREETING
-        );
-        setTimeout(() => {
-          restartConversation();
-        }, 1000);
-        return;
-      }
-      
       const response = await api.get('/bookings/checkAvailability', {
         params: { auditoriumId, date, startTime, endTime }
       });
 
       setTimeout(() => {
         if (response.data.available) {
-          toast.success('Time slot is available!');
           addBotMessage("✅ Perfect! The auditorium is free during that time.", null);
           setTimeout(() => {
             showSummary();
           }, 800);
         } else {
-          // Build conflict message if conflicts exist
-          let conflictMsg = "⚠️ Sorry, that time slot is already booked.";
-          if (response.data.conflicts && response.data.conflicts.length > 0) {
-            conflictMsg += "\n\nConflicting bookings:";
-            response.data.conflicts.forEach(conflict => {
-              conflictMsg += `\n• ${conflict.startTime} - ${conflict.endTime}: ${conflict.eventTitle || 'Booking'}`;
-            });
-          }
-          conflictMsg += "\n\nPlease try a different time.";
-          
-          toast.warning('Time slot unavailable - please choose another time');
-          addBotMessage(conflictMsg, STEPS.TIME);
-          
+          addBotMessage(
+            "⚠️ Sorry, that time slot is already booked. Please try a different time.",
+            STEPS.TIME
+          );
           // Reset times and ask again
           setBookingData(prev => ({ ...prev, startTime: '', endTime: '' }));
           setTimeout(() => {
@@ -369,17 +344,9 @@ export default function SmartAssistant() {
       }, 1000);
     } catch (error) {
       console.error('Availability check error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to check availability';
-      toast.error(`Error: ${errorMessage}`);
-      addBotMessage(
-        `⚠️ Error checking availability: ${errorMessage}. Let's try again or start over.`,
-        STEPS.TIME
-      );
-      // Reset times and ask again
-      setBookingData(prev => ({ ...prev, startTime: '', endTime: '' }));
+      addBotMessage("⚠️ Couldn't check availability. Let me proceed with your booking anyway.", null);
       setTimeout(() => {
-        addBotMessage("What time should the event start? (HH:MM)", STEPS.TIME);
-        setAwaitingInput(true);
+        showSummary();
       }, 1000);
     }
   };
