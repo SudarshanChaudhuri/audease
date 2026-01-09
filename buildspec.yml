@@ -3,26 +3,22 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 18
+      nodejs: 22  # FIXED: Updated from 18 to 22 to match your project requirements
     commands:
-      # DEBUG: List all files to check folder names
-      - echo "--- LISTING FILES ---"
-      - ls -la
-      - echo "--- END LISTING ---"
-      
-      # Try entering the folder (check capitalization here!)
-      - cd frontend 
-      - npm install
+      # We only install the global tool here
       - npm install -g firebase-tools
 
   build:
     commands:
-      # Ensure this matches the folder name found in the 'ls -la' step above
-      - cd frontend
-      - echo Building...
-      - CI=false npm run build
+      # DEBUG: Verify we are in the right place
+      - ls -la
+      
+      # We run everything in one chain to prevent "state loss" between phases
+      - echo "Entering frontend and building..."
+      - cd frontend && npm install && CI=false npm run build
 
   post_build:
     commands:
-      - cd frontend
-      - firebase deploy --token "$FIREBASE_TOKEN" --non-interactive --only hosting
+      - echo "Deploying to Firebase..."
+      # We enter the folder again for the deploy step
+      - cd frontend && firebase deploy --token "$FIREBASE_TOKEN" --non-interactive --only hosting
