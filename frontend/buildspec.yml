@@ -1,4 +1,3 @@
-# buildspec.yml
 version: 0.2
 
 phases:
@@ -6,17 +5,24 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
+      # FIX: Go into the folder first
+      - cd frontend 
       - echo Installing dependencies...
-      - npm i
-
+      - npm install
+      # If you need global tools, install them here too
+      - npm install -g firebase-tools
+  
   build:
     commands:
-      - echo Building the React app...
-      - npm run build
-
-artifacts:
-  files:
-    - '**/*'
-  base-directory: dist
-
-  discard-paths: no
+      # FIX: Go into the folder again (each phase starts fresh in the root)
+      - cd frontend
+      - echo Building the frontend...
+      - CI=false npm run build 
+  
+  post_build:
+    commands:
+      # FIX: Go into the folder again
+      - cd frontend
+      - echo Deploying to Firebase...
+      # Point to the firebase token and deploy
+      - firebase deploy --token "$FIREBASE_TOKEN" --non-interactive --only hosting
